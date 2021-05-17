@@ -6,10 +6,10 @@ import gym
 import scipy, scipy.misc
 
 import os, sys
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
+sys.path.append(os.path.join(os.path.dirname("__file__"), '..'))
+sys.path.append(os.path.join(os.path.dirname("__file__"), '..', '..'))
 
-from utils import to_pickle, from_pickle
+from ..utils import to_pickle, from_pickle
 
 def get_theta(obs):
     '''Transforms coordinate basis from the defaults of the gym pendulum env.'''

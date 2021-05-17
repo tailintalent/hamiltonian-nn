@@ -1,6 +1,7 @@
 # Hamiltonian Neural Networks | 2019
 # Sam Greydanus, Misko Dzamba, Jason Yosinski
 
+import pdb
 import autograd
 import autograd.numpy as np
 
@@ -18,8 +19,10 @@ def dynamics_fn(t, coords):
     S = np.concatenate([dpdt, -dqdt], axis=-1)
     return S
 
-def get_trajectory(t_span=[0,3], timescale=15, radius=None, y0=None, noise_std=0.1, **kwargs):
-    t_eval = np.linspace(t_span[0], t_span[1], int(timescale*(t_span[1]-t_span[0])))
+def get_trajectory(radius=None, y0=None, noise_std=0.1, **kwargs):
+    time_stamps = kwargs["time_stamps"] if "time_stamps" in kwargs else 45
+    t_span = [0, 3/44*(time_stamps-1)]
+    t_eval = np.linspace(t_span[0], t_span[1], time_stamps)
     
     # get initial state
     if y0 is None:
@@ -52,7 +55,6 @@ def get_dataset(seed=0, samples=50, test_split=0.5, **kwargs):
         
     data['x'] = np.concatenate(xs)
     data['dx'] = np.concatenate(dxs).squeeze()
-
     # make a train/test split
     split_ix = int(len(data['x']) * test_split)
     split_data = {}
