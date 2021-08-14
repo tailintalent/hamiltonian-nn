@@ -6,10 +6,10 @@ import scipy
 solve_ivp = scipy.integrate.solve_ivp
 
 import os, sys
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
+sys.path.append(os.path.join(os.path.dirname("__file__"), '..'))
+sys.path.append(os.path.join(os.path.dirname("__file__"), '..', '..'))
 
-from utils import to_pickle, from_pickle
+from ..utils import to_pickle, from_pickle
 
 ##### ENERGY #####
 def potential_energy(state):
