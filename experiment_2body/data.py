@@ -75,7 +75,7 @@ def get_orbit(state, update_fn=update, t_points=100, t_span=[0,2], **kwargs):
 
 
 ##### INITIALIZE THE TWO BODIES #####
-def random_config(orbit_noise=5e-2, min_radius=0.5, max_radius=1.5):
+def random_config(noise_std=5e-2, min_radius=0.5, max_radius=1.5):
     state = np.zeros((2,5))
     state[:,0] = 1
     pos = np.random.rand(2) * (max_radius-min_radius) + min_radius
@@ -84,7 +84,7 @@ def random_config(orbit_noise=5e-2, min_radius=0.5, max_radius=1.5):
     # velocity that yields a circular orbit
     vel = np.flipud(pos) / (2 * r**1.5)
     vel[0] *= -1
-    vel *= 1 + orbit_noise*np.random.randn()
+    vel *= 1 + noise_std*np.random.randn()
 
     # make the circular orbits SLIGHTLY elliptical
     state[:,1:3] = pos
@@ -104,7 +104,7 @@ def coords2state(coords, nbodies=2, mass=1):
 
 
 ##### INTEGRATE AN ORBIT OR TWO #####
-def sample_orbits(timesteps=50, trials=1000, nbodies=2, orbit_noise=5e-2,
+def sample_orbits(timesteps=50, trials=1000, nbodies=2, noise_std=5e-2,
                   min_radius=0.5, max_radius=1.5, t_span=[0, 20], verbose=False, **kwargs):
     
     orbit_settings = locals()
@@ -115,7 +115,7 @@ def sample_orbits(timesteps=50, trials=1000, nbodies=2, orbit_noise=5e-2,
     N = timesteps*trials
     while len(x) < N:
 
-        state = random_config(orbit_noise, min_radius, max_radius)
+        state = random_config(noise_std, min_radius, max_radius)
         orbit, settings = get_orbit(state, t_points=timesteps, t_span=t_span, **kwargs)
         batch = orbit.transpose(2,0,1).reshape(-1,10)
 
@@ -132,8 +132,8 @@ def sample_orbits(timesteps=50, trials=1000, nbodies=2, orbit_noise=5e-2,
             shaped_state = state.copy().reshape(2,5,1)
             e.append(total_energy(shaped_state))
 
-    data = {'coords': np.stack(x)[:N],
-            'dcoords': np.stack(dx)[:N],
+    data = {'x': np.stack(x)[:N],
+            'dx': np.stack(dx)[:N],
             'energy': np.stack(e)[:N] }
     return data, orbit_settings
 
@@ -143,7 +143,7 @@ def make_orbits_dataset(test_split=0.2, **kwargs):
     data, orbit_settings = sample_orbits(**kwargs)
     
     # make a train/test split
-    split_ix = int(data['coords'].shape[0] * test_split)
+    split_ix = int(data['x'].shape[0] * test_split)
     split_data = {}
     for k, v in data.items():
         split_data[k], split_data['test_' + k] = v[split_ix:], v[:split_ix]
