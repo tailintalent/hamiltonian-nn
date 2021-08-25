@@ -3,6 +3,7 @@
 
 import numpy as np
 import scipy
+import pdb
 solve_ivp = scipy.integrate.solve_ivp
 
 import os, sys
@@ -59,6 +60,11 @@ def update(t, state):
 
 ##### INTEGRATION SETTINGS #####
 def get_orbit(state, update_fn=update, t_points=100, t_span=[0,2], **kwargs):
+    """t_points: 50
+       t_span: [0, 20]
+       path['y']: shape (10, 50)
+       orbit: shape (2, 5, 50) 2-body, 5 features [m,x,y,vx,vy], 50 time steps
+    """
     if not 'rtol' in kwargs.keys():
         kwargs['rtol'] = 1e-9
 
@@ -106,6 +112,10 @@ def coords2state(coords, nbodies=2, mass=1):
 ##### INTEGRATE AN ORBIT OR TWO #####
 def sample_orbits(timesteps=50, trials=1000, nbodies=2, noise_std=5e-2,
                   min_radius=0.5, max_radius=1.5, t_span=[0, 20], verbose=False, **kwargs):
+    """
+    timesteps: number of consecutive time steps
+    trials: number of trajectories
+    """
     
     orbit_settings = locals()
     if verbose:
@@ -116,15 +126,15 @@ def sample_orbits(timesteps=50, trials=1000, nbodies=2, noise_std=5e-2,
     while len(x) < N:
 
         state = random_config(noise_std, min_radius, max_radius)
-        orbit, settings = get_orbit(state, t_points=timesteps, t_span=t_span, **kwargs)
-        batch = orbit.transpose(2,0,1).reshape(-1,10)
+        orbit, settings = get_orbit(state, t_points=timesteps, t_span=t_span, **kwargs)  # orbit: shape [2,5,timesteps]
+        batch = orbit.transpose(2,0,1).reshape(-1,10)  # shape: [timesteps, 10=2*5]
 
         for state in batch:
-            dstate = update(None, state)
+            dstate = update(None, state)  # state: shape (10,)
             
             # reshape from [nbodies, state] where state=[m, qx, qy, px, py]
             # to [canonical_coords] = [qx1, qx2, qy1, qy2, px1,px2,....]
-            coords = state.reshape(nbodies,5).T[1:].flatten()
+            coords = state.reshape(nbodies,5).T[1:].flatten()  # before reshape: [4,2]
             dcoords = dstate.reshape(nbodies,5).T[1:].flatten()
             x.append(coords)
             dx.append(dcoords)
@@ -158,14 +168,6 @@ def get_dataset(experiment_name, save_dir, **kwargs):
     '''Returns an orbital dataset. Also constructs
     the dataset if no saved version is available.'''
 
-    path = '{}/{}-orbits-dataset.pkl'.format(save_dir, experiment_name)
-
-    try:
-        data = from_pickle(path)
-        print("Successfully loaded data from {}".format(path))
-    except:
-        print("Had a problem loading data from {}. Rebuilding dataset...".format(path))
-        data = make_orbits_dataset(**kwargs)
-        to_pickle(data, path)
+    data = make_orbits_dataset(**kwargs)
 
     return data
